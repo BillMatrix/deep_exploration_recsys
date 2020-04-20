@@ -6,7 +6,7 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
     from yahoo_environment import YahooFeedUnit, YahooFeed
 
     cur_time = float(time.time())
-    target_interest_level = 0.5
+    target_interest_level = 0.8
 
 #     print('num units: {}, num negative: {}, randomize: {}, experiment: {}'.format(n, n - num_positive, r, exp))
 
@@ -20,21 +20,21 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
         if j % 1 == 0:
             print('Experiment {} at episode {}, used time {}'.format(exp, j, time.time() - cur_time))
             cur_time = time.time()
-        
+
         for i in range(len(agents)):
             agents_episode_reward[agents[i].agent_name].append(0)
             if j == 0:
                 agents_cumulative_reward[agents[i].agent_name].append(0)
             else:
                 agents_cumulative_reward[agents[i].agent_name].append(
-                    sum(agents_episode_reward[agents[i].agent_name]) 
+                    sum(agents_episode_reward[agents[i].agent_name])
                     + agents_cumulative_reward[agents[i].agent_name][j - 1])
 
         for user_feature in user_features:
             envs = [
                 YahooFeed(feeds, target_interest_level, user_model, user_feature) for _ in range(len(agents))
             ]
-        
+
             # for i, agent in enumerate(agents):
             #     print(agent.agent_name, agent.cum_rewards)
             #     print(envs[i].interest_level)
@@ -43,7 +43,7 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
             for i, agent in enumerate(agents):
                 envs[i].reset(user_feature)
                 agents[i].reset(user_feature)
-                
+
             for i in range(len(agents)):
                 scroll = True
                 while scroll:
@@ -134,13 +134,13 @@ def caller(episode_length, candidate_count, num_experiment, num_episodes, experi
     import random
     import pickle as pkl
     import numpy as np
-    from tensorboardX import SummaryWriter
+    from torch.utils.tensorboard import SummaryWriter
 
     all_user_features = pkl.load(open('all_user_features.pkl', 'rb'))
-    user_features = all_user_features[:100]
+    user_features = all_user_features[:20]
 
     user_model = pkl.load(open('learned_user_intent_model.pkl', 'rb'))
-    writer = SummaryWriter('./experiment_multi/')
+    writer = SummaryWriter('./experiment/')
 
     agents_cumulative_reward = []
     agents = []
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     num_experiments = 10
     inputs = []
 
-    num_episodes = 40
+    num_episodes = 50
     episode_length = 10
     candidate_count = 5
     experiment_name = 'deep_exp_prior_1_10_epi_40'
