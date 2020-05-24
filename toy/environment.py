@@ -11,12 +11,13 @@ class FeedUnit(object):
 
 
 class Feed(object):
-    def __init__(self, feeds: List[FeedUnit], num_positive):
+    def __init__(self, feeds, num_positive, env_type='sparse_reward'):
         self.feeds = feeds
         self.interest_level: float = 0.
         self.seen_units = []
         self.current_feed = 0
         self.num_positive = num_positive
+        self.env_type = env_type
 
     def reset(self):
         self.interest_level = 0.
@@ -27,8 +28,6 @@ class Feed(object):
         reward = 0
         if action == 1:
             self.interest_level += self.feeds[self.current_feed].interest
-#             if self.interest_level > self.num_positive:
-#                 self.interest_level = self.num_positive
 
         if self.interest_level == self.num_positive:
             reward = 1
@@ -40,9 +39,6 @@ class Feed(object):
         self.current_feed += 1
 
         if action == 1:
-#             print('here')
-#             reward -= 0.01/20
-
             scroll = self.interest_level >= 0 and self.current_feed != len(self.feeds)
 
             return scroll, reward, self.interest_level
