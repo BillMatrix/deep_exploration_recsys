@@ -29,19 +29,16 @@ class Feed(object):
         if action == 1:
             self.interest_level += self.feeds[self.current_feed].interest
 
-        if self.interest_level == self.num_positive:
-            reward = 1
-
-        if self.current_feed == len(self.feeds) or reward == 1:
-            return False, reward, self.interest_level
+        if self.env_type == 'sparse_reward':
+            if self.interest_level == self.num_positive:
+                reward = 1
+                return False, reward
+        elif self.env_type == 'immediate_reward':
+            if action == 1:
+                reward = self.feeds[self.current_feed].interest
 
         scroll: bool = True
         self.current_feed += 1
 
-        if action == 1:
-            scroll = self.interest_level >= 0 and self.current_feed != len(self.feeds)
-
-            return scroll, reward, self.interest_level
-
-        scroll = self.current_feed != len(self.feeds)
-        return scroll, reward, self.interest_level
+        scroll = self.interest_level >= 0 and self.current_feed != len(self.feeds)
+        return scroll, reward

@@ -30,7 +30,7 @@ class MLP(nn.Module):
         def initialize_weights(m):
             if type(m) == nn.Linear:
                 torch.nn.init.xavier_uniform_(m.weight)
-                m.bias.data.fill_(0.01)
+                m.bias.data.fill_(0.1)
         self.apply(initialize_weights)
 
 

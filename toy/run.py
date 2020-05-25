@@ -4,7 +4,7 @@ from tensorboardX import SummaryWriter
 
 writer = SummaryWriter('./experiment/')
 
-def run_experiment(agents, feeds, exp, num_episodes, r):
+def run_experiment(agents, feeds, exp, num_episodes, r, env_type):
     import time
     from environment import FeedUnit, Feed
 
@@ -18,7 +18,7 @@ def run_experiment(agents, feeds, exp, num_episodes, r):
 #     print('num units: {}, num negative: {}, randomize: {}, experiment: {}'.format(n, n - num_positive, r, exp))
 
     envs = [
-        Feed(feeds, num_positive) for _ in range(len(agents))
+        Feed(feeds, num_positive, env_type) for _ in range(len(agents))
     ]
 
     agents_episode_reward = {}
@@ -39,10 +39,13 @@ def run_experiment(agents, feeds, exp, num_episodes, r):
             agents[i].reset()
         for i in range(len(agents)):
             scroll = True
+            # count = 0
             while scroll:
                 action = agents[i].choose_action()
-                scroll, num_ads, interest = envs[i].step(action)
-                agents[i].update_buffer(scroll, num_ads, interest)
+                # print('current_feed_interest: {}'.format(feeds[count].interest))
+                # count += 1
+                scroll, num_ads = envs[i].step(action)
+                agents[i].update_buffer(scroll, num_ads)
 
             agents[i].learn_from_buffer()
 
@@ -56,8 +59,9 @@ def run_experiment(agents, feeds, exp, num_episodes, r):
     return agents_episode_reward
 
 # @ray.remote
-def experiment_wrapper(feed_units, i, num_episodes, randomize):
+def experiment_wrapper(feed_units, i, num_episodes, randomize, env_type):
     from supervised_agent import SupervisedAgent
+    from supervised_agent_one_step import SupervisedAgentOneStep
     from dqn_agent import DQNAgent
     from deep_exp_agent import DeepExpAgent
     import numpy as np
@@ -79,12 +83,14 @@ def experiment_wrapper(feed_units, i, num_episodes, randomize):
     agents = [
         # OracleAgent(feed_units, session_size),
         SupervisedAgent(feed_units, 'supervised_{}_{}'.format(num_positive, len(feed_units))),
+        SupervisedAgentOneStep(feed_units, 'supervised_one_step_{}_{}'.format(num_positive, len(feed_units))),
         DQNAgent([k for k in range(len(feed_units))], 'dqn_{}_{}'.format(num_positive, len(feed_units)))
     ] + deep_exp_agents
 
-    cumulative_reward = run_experiment(agents, feed_units, i, num_episodes, randomize)
+    cumulative_reward = run_experiment(agents, feed_units, i, num_episodes, randomize, env_type)
 
-    np.save('experiment_{}_{}_{}_{}'.format(num_positive, len(feed_units), int(randomize), i), cumulative_reward)
+    np.save('experiment_{}_{}_{}_{}_{}'.format(
+        num_positive, len(feed_units), int(randomize), i, env_type), cumulative_reward)
 
 
 def generate_feeds(n, k):
@@ -98,7 +104,7 @@ def generate_feeds(n, k):
 
     return feed_units
 
-def caller(n, k, num_experiment, num_episodes, randomize=False):
+def caller(n, k, num_experiment, num_episodes, randomize=False, env_type='sparse_reward'):
     import random
 
     feed_units = generate_feeds(n, k)
@@ -112,7 +118,7 @@ def caller(n, k, num_experiment, num_episodes, randomize=False):
 
     futures = []
     for i in range(num_experiment):
-        experiment_wrapper(feed_units, i, num_episodes, randomize)
+        experiment_wrapper(feed_units, i, num_episodes, randomize, env_type)
     #     futures.append(experiment_wrapper.remote(feed_units, i, num_episodes, randomize))
     # ray.get(futures)
 
@@ -121,14 +127,14 @@ def caller(n, k, num_experiment, num_episodes, randomize=False):
 
 
 if __name__ == '__main__':
-    num_experiments = 5
+    num_experiments = 1
     inputs = []
 
     for n in range(5, 6):
-        for k in range(2, 3):
+        for k in range(100, 101):
             # for r in range(0, 1):
-            num_episodes = 1000 * int(k / 2 + 1)
-            caller(n, k, num_experiments, num_episodes)
+            num_episodes = 3000
+            caller(n, k, num_experiments, num_episodes, env_type='immediate_reward')
 
     writer.close()
 #     import torch.multiprocessing as mp

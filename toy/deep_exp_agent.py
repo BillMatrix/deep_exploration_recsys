@@ -109,14 +109,15 @@ class DeepExpAgent(Agent):
 
             self.current_feed += 1
 
+            # print('action: {}'.format(best_action[0]))
             return best_action[0]
 
     def update_buffer(
         self,
         scroll: bool,
         reward: int,
-        interest = 0
     ):
+        # print('reward: {}'.format(reward))
         self.cum_rewards += reward
         if not scroll:
             self.training_data.push(
@@ -177,7 +178,7 @@ class DeepExpAgent(Agent):
 
                 self.running_loss = 0.8 * self.running_loss + 0.2 * loss_ensemble
         except:
-            print('no non-terminal state')
+            print('{}: no non-terminal state'.format(self.agent_name))
 
     def reset(self):
         self.available_units = copy.deepcopy(self.feed_units)

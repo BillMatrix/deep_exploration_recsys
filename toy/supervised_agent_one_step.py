@@ -14,7 +14,7 @@ has_gpu = torch.cuda.is_available()
 device = torch.device("cpu")
 
 
-class SupervisedAgent(Agent):
+class SupervisedAgentOneStep(Agent):
     def __init__(
             self,
             feed_units: List[int],
@@ -57,11 +57,12 @@ class SupervisedAgent(Agent):
     def choose_action(self):
         available_actions = [0, 1]
 
-        features: List[float] = [-1. for _ in range(self.num_features)]
-        for index in range(self.current_feed):
-            features[index] = 0.
-        for index in self.history_unit_indices:
-            features[index] = 1.
+        features: List[float] = [0. for _ in range(self.num_features)]
+        features[self.current_feed] = 1.
+        # for index in range(self.current_feed):
+        #     features[index] = 0.
+        # for index in self.history_unit_indices:
+        #     features[index] = 1.
 
 #         base_feature.append(self.interest_level)
         with torch.no_grad():
@@ -102,7 +103,7 @@ class SupervisedAgent(Agent):
         for i, data in enumerate(self.training_data):
             self.buffer.push(
                 torch.tensor([data], dtype=torch.double),
-                torch.tensor([[np.sum(self.rewards[i:])]], dtype=torch.double),
+                torch.tensor([[self.rewards[i]]], dtype=torch.double),
                 torch.tensor([self.actions[i]], dtype=torch.long),
             )
 

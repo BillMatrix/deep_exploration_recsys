@@ -91,7 +91,6 @@ class DQNAgent(Agent):
         self,
         scroll: bool,
         reward: int,
-        interest = 0
     ):
 #         print(reward)
         self.cum_rewards += reward
@@ -154,7 +153,7 @@ class DQNAgent(Agent):
             self.running_loss = 0.8 * self.running_loss + 0.2 * loss_ensemble
             self.epsilon = 0.999 * self.epsilon
         except:
-            print('no non-terminal state')
+            print('{}: no non-terminal state'.format(self.agent_name))
 
     def reset(self):
         self.cum_rewards: float = 0.
