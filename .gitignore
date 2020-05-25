@@ -1,3 +1,6 @@
 yahoo/__pycache__/
 yahoo/deep_exp_prior_1_10_epi_40/
 yahoo/experiment/
+toy/experiment/
+toy/__pycache__/
+toy/experiment*
