@@ -199,7 +199,7 @@ class YahooDeepExpAgent():
 
             self.running_loss = 0.8 * self.running_loss + 0.2 * loss_ensemble
 
-    def reset(self, user_features):
+    def reset(self, user_features, user_embedding):
         self.cum_rewards: float = 0.
         self.interest_level = 0.
         self.latest_feature = None

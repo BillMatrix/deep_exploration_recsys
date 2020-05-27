@@ -11,7 +11,7 @@ from helper import SupervisedTransition, SupervisedMemory, MLP
 device = torch.device("cpu")
 
 
-class YahooSupervisedAgent():
+class YahooSupervisedAgentOneStep():
     def __init__(self,
                  initial_feed_candidates,
                  user_features,
@@ -35,7 +35,7 @@ class YahooSupervisedAgent():
         self.training_data = []
         self.feed_feature_count = feed_feature_count
         self.user_feature_count = user_feature_count
-        self.num_features: int = feed_counts * feed_feature_count + feed_feature_count + user_feature_count
+        self.num_features: int = feed_feature_count + user_feature_count
         self.buffer: SupervisedMemory = SupervisedMemory(100000)
 
         self.model_dims: List[int] = [self.num_features] + model_dims + [1]
@@ -59,15 +59,13 @@ class YahooSupervisedAgent():
         available_actions = [candidate.features for candidate in self.current_feed_candidates]
 
         features = np.array([-1. for _ in range(self.num_features)])
-        for index, action in enumerate(self.history_actions):
-            features[index * self.feed_feature_count:(index + 1) * self.feed_feature_count] = action
         features[-self.user_feature_count:] = self.user_features
 
         candidate_features = []
         for f in available_actions:
             candidate_feature = np.copy(features)
             candidate_feature[
-                self.feed_counts * self.feed_feature_count:(self.feed_counts + 1) * self.feed_feature_count
+                :self.feed_feature_count
             ] = f
             candidate_features.append(candidate_feature)
         candidate_features = np.array(candidate_features)
@@ -105,7 +103,7 @@ class YahooSupervisedAgent():
         for i, data in enumerate(self.training_data):
             self.buffer.push(
                 torch.tensor([data], dtype=torch.double),
-                torch.tensor([[np.sum(self.rewards[i:])]], dtype=torch.double),
+                torch.tensor([[self.rewards[i]]], dtype=torch.double),
             )
 
         if len(self.buffer) < self.batch_size:

@@ -1,9 +1,12 @@
 # import ray
 # ray.init()
 
-def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, writer=None):
+user_count = 20
+
+def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, env_type, writer=None):
     import time
     from yahoo_environment import YahooFeedUnit, YahooFeed
+    import numpy as np
 
     cur_time = float(time.time())
     target_interest_level = 0.8
@@ -21,6 +24,7 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
             print('Experiment {} at episode {}, used time {}'.format(exp, j, time.time() - cur_time))
             cur_time = time.time()
 
+        feeds = generate_feeds(10, 4)
         for i in range(len(agents)):
             agents_episode_reward[agents[i].agent_name].append(0)
             if j == 0:
@@ -30,9 +34,10 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
                     sum(agents_episode_reward[agents[i].agent_name])
                     + agents_cumulative_reward[agents[i].agent_name][j - 1])
 
-        for user_feature in user_features:
+        for i, user_feature in enumerate(user_features):
             envs = [
-                YahooFeed(feeds, target_interest_level, user_model, user_feature) for _ in range(len(agents))
+                YahooFeed(feeds, target_interest_level, user_model, user_feature, env_type)
+                for _ in range(len(agents))
             ]
 
             # for i, agent in enumerate(agents):
@@ -42,7 +47,7 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
 
             for i, agent in enumerate(agents):
                 envs[i].reset(user_feature)
-                agents[i].reset(user_feature)
+                agents[i].reset(user_feature, i)
 
             for i in range(len(agents)):
                 scroll = True
@@ -53,8 +58,8 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
 
                 agents[i].learn_from_buffer()
 
-                agents_episode_reward[agents[i].agent_name][j] += reward
-                agents_cumulative_reward[agents[i].agent_name][j] += reward
+                agents_episode_reward[agents[i].agent_name][j] += agents[i].cum_rewards
+                agents_cumulative_reward[agents[i].agent_name][j] += agents[i].cum_rewards
 
         for i in range(len(agents)):
             if writer:
@@ -64,8 +69,11 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
     return agents_episode_reward
 
 # @ray.remote
-def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, experiment_name, writer=None):
+def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, experiment_name, env_type, writer=None):
     from yahoo_supervised_agent import YahooSupervisedAgent
+    from yahoo_supervised_agent_one_step import YahooSupervisedAgentOneStep
+    from yahoo_supervised_ncf_agent import YahooSupervisedNCFAgent
+    from yahoo_supervised_ncf_agent_one_step import YahooSupervisedNCFOneStepAgent
     from yahoo_dqn_agent import YahooDQNAgent
     from yahoo_deep_exp_agent import YahooDeepExpAgent
     import numpy as np
@@ -73,7 +81,7 @@ def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, e
 
     deep_exp_agents = []
     feed_units = generate_feeds(episode_length, candidate_count)
-    for prior in range(0, 3):
+    for prior in range(0, 1):
         deep_exp_agents.append(
             YahooDeepExpAgent(
                 feed_units[0], user_features[0], feed_count,
@@ -85,14 +93,17 @@ def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, e
     agents = [
         # OracleAgent(feed_units, session_size),
         YahooSupervisedAgent(feed_units[0], user_features[0], feed_count, 'supervised_{}'.format(feed_count)),
+        YahooSupervisedAgentOneStep(feed_units[0], user_features[0], feed_count, 'supervised_one_step_{}'.format(feed_count)),
+        YahooSupervisedNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'supervised_ncf_{}'.format(feed_count)),
+        YahooSupervisedNCFOneStepAgent(feed_units[0], user_features[0], 0, feed_count, 'supervised_ncf_one_step_{}'.format(feed_count)),
         YahooDQNAgent(feed_units[0], user_features[0], feed_count, 'dqn_{}'.format(feed_count))
     ] + deep_exp_agents
 
-    cumulative_reward = run_experiment(agents, feed_units, user_model, user_features, i, num_episodes, writer)
+    cumulative_reward = run_experiment(agents, feed_units, user_model, user_features, i, num_episodes, env_type, writer)
 
     if not os.path.isdir(experiment_name):
         os.mkdir(experiment_name)
-    np.save('./{}/supervised_experiment_{}_{}_{}'.format(experiment_name, feed_count, feed_count, i), cumulative_reward)
+    np.save('./{}/experiment_{}_{}_{}_{}'.format(experiment_name, feed_count, feed_count, i, env_type), cumulative_reward)
 
 
 def generate_feeds(episode_length, candidate_count):
@@ -105,10 +116,11 @@ def generate_feeds(episode_length, candidate_count):
     all_article_features = pkl.load(open('all_article_features.pkl', 'rb'))
     filtered_article_features = np.array(list(
         filter(lambda x: len(x) == 6, list(all_article_features.values()))))
-    randomly_selected_articles = filtered_article_features[
-        np.random.choice(
+    selected_indices = np.random.choice(
             len(filtered_article_features),
-            episode_length * candidate_count)]
+            episode_length * candidate_count,
+            replace=False)
+    randomly_selected_articles = filtered_article_features[selected_indices]
 
     current_index = 0
 
@@ -119,25 +131,27 @@ def generate_feeds(episode_length, candidate_count):
             current_batch.append(
                 YahooFeedUnit(
                     randomly_selected_articles[batch_index * candidate_count + index],
+                    selected_indices[batch_index * candidate_count + index] + 1,
                     0,
                 )
             )
         current_batch.append(YahooFeedUnit(
-            np.array([-1. for _ in range(6)]),
+            np.array([0. for _ in range(6)]),
+            0,
             0,
         ))
         feed_units.append(current_batch)
 
     return feed_units
 
-def caller(episode_length, candidate_count, num_experiment, num_episodes, experiment_name):
+def caller(episode_length, candidate_count, num_experiment, num_episodes, experiment_name, env_type):
     import random
     import pickle as pkl
     import numpy as np
     from torch.utils.tensorboard import SummaryWriter
 
     all_user_features = pkl.load(open('all_user_features.pkl', 'rb'))
-    user_features = all_user_features[:20]
+    user_features = all_user_features[:user_count]
 
     user_model = pkl.load(open('learned_user_intent_model.pkl', 'rb'))
     writer = SummaryWriter('./experiment/')
@@ -149,7 +163,7 @@ def caller(episode_length, candidate_count, num_experiment, num_episodes, experi
 
     futures = []
     for i in range(num_experiment):
-        experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, experiment_name, writer)
+        experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, experiment_name, env_type, writer)
     #     futures.append(experiment_wrapper.remote(user_features, user_model, feed_count, i, num_episodes))
     # ray.get(futures)
 
@@ -158,11 +172,11 @@ def caller(episode_length, candidate_count, num_experiment, num_episodes, experi
     # writer.close()
 
 if __name__ == '__main__':
-    num_experiments = 10
+    num_experiments = 1
     inputs = []
 
-    num_episodes = 50
+    num_episodes = 300
     episode_length = 10
-    candidate_count = 5
-    experiment_name = 'deep_exp_prior_1_10_epi_40'
-    caller(episode_length, candidate_count, num_experiments, num_episodes, experiment_name)
+    candidate_count = 4
+    experiment_name = 'experiment'
+    caller(episode_length, candidate_count, num_experiments, num_episodes, experiment_name, env_type='immediate_reward')
