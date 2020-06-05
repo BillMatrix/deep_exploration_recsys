@@ -127,14 +127,14 @@ def caller(n, k, num_experiment, num_episodes, randomize=False, env_type='sparse
 
 
 if __name__ == '__main__':
-    num_experiments = 1
+    num_experiments = 10
     inputs = []
 
     for n in range(5, 6):
-        for k in range(100, 101):
+        for k in range(2, 3):
             # for r in range(0, 1):
-            num_episodes = 3000
-            caller(n, k, num_experiments, num_episodes, env_type='immediate_reward')
+            num_episodes = 2000
+            caller(n, k, num_experiments, num_episodes, env_type='sparse_reward')
 
     writer.close()
 #     import torch.multiprocessing as mp

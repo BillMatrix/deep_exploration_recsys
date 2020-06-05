@@ -35,7 +35,7 @@ class Feed(object):
                 return False, reward
         elif self.env_type == 'immediate_reward':
             if action == 1:
-                reward = self.feeds[self.current_feed].interest
+                reward = (self.feeds[self.current_feed].interest + 1) / 2
 
         scroll: bool = True
         self.current_feed += 1

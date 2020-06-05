@@ -43,7 +43,7 @@ class YahooSupervisedNCFOneStepAgent():
         self.training_feed_embeddings = []
         self.feed_feature_count = feed_feature_count
         self.user_feature_count = user_feature_count
-        self.num_features: int = feed_counts * feed_feature_count + feed_feature_count + user_feature_count
+        self.num_features: int = feed_feature_count + user_feature_count
         self.buffer: NCFMemory = NCFMemory(100000)
 
         self.model_dims: List[int] = [self.num_features] + model_dims + [1]
@@ -76,8 +76,6 @@ class YahooSupervisedNCFOneStepAgent():
         available_actions = [candidate for candidate in self.current_feed_candidates]
 
         features = np.array([-1. for _ in range(self.num_features)])
-        for index, action in enumerate(self.history_actions):
-            features[index * self.feed_feature_count:(index + 1) * self.feed_feature_count] = action
         features[-self.user_feature_count:] = self.user_features
 
         candidate_features = []
@@ -88,7 +86,7 @@ class YahooSupervisedNCFOneStepAgent():
             candidate_feed_embeddings.append(f.embedding)
             candidate_feature = np.copy(features)
             candidate_feature[
-                self.feed_counts * self.feed_feature_count:(self.feed_counts + 1) * self.feed_feature_count
+                :self.feed_feature_count
             ] = f.features
             candidate_features.append(candidate_feature)
         candidate_features = np.array(candidate_features)
@@ -166,7 +164,7 @@ class YahooSupervisedNCFOneStepAgent():
 
         self.running_loss = 0.8 * self.running_loss + 0.2 * loss_ensemble
 
-    def reset(self, user_features, user_embedding):
+    def reset(self, user_features, initial_feeds, user_embedding):
         self.cum_rewards: float = 0.
         self.interest_level = 0.
         self.latest_feature = None
@@ -180,6 +178,6 @@ class YahooSupervisedNCFOneStepAgent():
         self.training_feed_embeddings = []
         self.cum_reward_history.append(self.cum_rewards)
         self.current_feed = 0
-        self.current_feed_candidates = self.initial_feed_candidates
+        self.current_feed_candidates = initial_feeds
         self.user_features = user_features
         self.user_embedding = user_embedding

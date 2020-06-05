@@ -1,7 +1,7 @@
 # import ray
 # ray.init()
 
-user_count = 20
+user_count = 1
 
 def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, env_type, writer=None):
     import time
@@ -31,10 +31,9 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
                 agents_cumulative_reward[agents[i].agent_name].append(0)
             else:
                 agents_cumulative_reward[agents[i].agent_name].append(
-                    sum(agents_episode_reward[agents[i].agent_name])
-                    + agents_cumulative_reward[agents[i].agent_name][j - 1])
+                    agents_cumulative_reward[agents[i].agent_name][j - 1])
 
-        for i, user_feature in enumerate(user_features):
+        for k, user_feature in enumerate(user_features):
             envs = [
                 YahooFeed(feeds, target_interest_level, user_model, user_feature, env_type)
                 for _ in range(len(agents))
@@ -47,7 +46,7 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
 
             for i, agent in enumerate(agents):
                 envs[i].reset(user_feature)
-                agents[i].reset(user_feature, i)
+                agents[i].reset(user_feature, feeds[0], k)
 
             for i in range(len(agents)):
                 scroll = True
@@ -63,8 +62,8 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
 
         for i in range(len(agents)):
             if writer:
-                writer.add_scalar('running_loss_' + agents[i].agent_name + '_' + str(exp), agents[i].running_loss, j)
-                writer.add_scalar('cumulative_reward_' + agents[i].agent_name + '_' + str(exp), agents_episode_reward[agents[i].agent_name][j], j)
+                writer.add_scalar('episodic_reward_' + agents[i].agent_name + '_' + str(exp), agents_episode_reward[agents[i].agent_name][j], j)
+                writer.add_scalar('cumulative_reward_' + agents[i].agent_name + '_' + str(exp), agents_cumulative_reward[agents[i].agent_name][j], j)
 
     return agents_episode_reward
 
@@ -154,7 +153,7 @@ def caller(episode_length, candidate_count, num_experiment, num_episodes, experi
     user_features = all_user_features[:user_count]
 
     user_model = pkl.load(open('learned_user_intent_model.pkl', 'rb'))
-    writer = SummaryWriter('./experiment/')
+    writer = SummaryWriter('./{}/'.format(experiment_name))
 
     agents_cumulative_reward = []
     agents = []
@@ -172,11 +171,11 @@ def caller(episode_length, candidate_count, num_experiment, num_episodes, experi
     # writer.close()
 
 if __name__ == '__main__':
-    num_experiments = 1
+    num_experiments = 5
     inputs = []
 
-    num_episodes = 300
+    num_episodes = 2000
     episode_length = 10
     candidate_count = 4
-    experiment_name = 'experiment'
-    caller(episode_length, candidate_count, num_experiments, num_episodes, experiment_name, env_type='immediate_reward')
+    experiment_name = 'experiment_sparse_80_single_user'
+    caller(episode_length, candidate_count, num_experiments, num_episodes, experiment_name, env_type='sparse_reward')

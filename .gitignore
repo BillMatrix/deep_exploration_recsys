@@ -4,3 +4,10 @@ yahoo/experiment/
 toy/experiment/
 toy/__pycache__/
 toy/experiment*
+.ipynb*
+*.ipynb
+experiment*
+toy/immediate*
+*.png
+*.jpg
+*.pdf

@@ -129,7 +129,7 @@ class YahooSupervisedAgentOneStep():
 
         self.running_loss = 0.8 * self.running_loss + 0.2 * loss_ensemble
 
-    def reset(self, user_features, user_embedding):
+    def reset(self, user_features, initial_feeds, user_embedding):
         self.cum_rewards: float = 0.
         self.interest_level = 0.
         self.latest_feature = None
@@ -139,5 +139,5 @@ class YahooSupervisedAgentOneStep():
         self.training_data = []
         self.cum_reward_history.append(self.cum_rewards)
         self.current_feed = 0
-        self.current_feed_candidates = self.initial_feed_candidates
+        self.current_feed_candidates = initial_feeds
         self.user_features = user_features

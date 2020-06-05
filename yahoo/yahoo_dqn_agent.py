@@ -178,10 +178,11 @@ class YahooDQNAgent():
         self.epsilon = 0.999 * self.epsilon
 
 
-    def reset(self, user_features, user_embedding):
+    def reset(self, user_features, initial_feeds, user_embedding):
         self.cum_rewards: float = 0.
         self.interest_level = 0.
         self.latest_feature = None
+        self.current_feed_candidates = initial_feeds
         self.target_net.load_state_dict(self.model.state_dict())
         self.target_net.double()
         self.target_net.eval()
@@ -189,5 +190,4 @@ class YahooDQNAgent():
         self.history_actions = []
         self.cum_reward_history.append(self.cum_rewards)
         self.current_feed = 0
-        self.current_feed_candidates = self.initial_feed_candidates
         self.user_features = user_features

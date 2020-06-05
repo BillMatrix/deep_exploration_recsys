@@ -31,7 +31,7 @@ class YahooFeed(object):
             # )
             all_interest.append(self.user_model.predict_proba(candidate_features[:-1])[:, 1])
 
-        self.threshold = np.percentile(all_interest, 90)
+        self.threshold = np.percentile(all_interest, 80)
 
         for feed_candidates in feeds:
             candidate_features = [np.concatenate((np.array(self.user_features), candidate.features)) for candidate in feed_candidates]
@@ -50,6 +50,10 @@ class YahooFeed(object):
 
     def step(self, action_feed):
         reward = 0
+        # print('start')
+        # print('target level', self.target_interest_level)
+        # print('features', action_feed.features)
+        # print('no action', np.all(np.equal(action_feed.features, np.array([0. for _ in range(6)]))))
 
         if not np.all(np.equal(action_feed.features, np.array([0. for _ in range(6)]))):
             self.interest_level += self.user_model.predict_proba(
@@ -66,10 +70,13 @@ class YahooFeed(object):
                 )[0][1] > self.threshold)
 
         # print(self.current_feed)
-        # print(reward)
+        # print('reward', reward)
 
         self.current_feed += 1
 
         scroll = self.interest_level >= 0 and self.current_feed != len(self.feeds)
+        # print('current index', self.current_feed)
+        # print('interest level', self.interest_level)
+        # print('scroll', scroll)
 
-        return scroll, reward, self.feeds[self.current_feed] if self.current_feed != len(self.feeds) else None
+        return scroll, reward, self.feeds[self.current_feed] if scroll else None
