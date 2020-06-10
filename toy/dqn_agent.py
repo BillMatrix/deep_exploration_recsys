@@ -19,7 +19,7 @@ class DQNAgent(Agent):
             self,
             feed_units: List[int],
             agent_name: str,
-            model_dims: List[int] = [20],
+            model_dims: List[int] = [],
             lr: float = 1e-3,
             boltzmann: bool = False,
             epsilon: float = 0.05,

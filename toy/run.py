@@ -1,6 +1,11 @@
 # import ray
 # ray.init()
 from tensorboardX import SummaryWriter
+import os
+
+filelist = [ f for f in os.listdir('./experiment/') ]
+for f in filelist:
+    os.remove(os.path.join('./experiment/', f))
 
 writer = SummaryWriter('./experiment/')
 
@@ -44,8 +49,9 @@ def run_experiment(agents, feeds, exp, num_episodes, r, env_type):
                 action = agents[i].choose_action()
                 # print('current_feed_interest: {}'.format(feeds[count].interest))
                 # count += 1
-                scroll, num_ads = envs[i].step(action)
-                agents[i].update_buffer(scroll, num_ads)
+                scroll, reward = envs[i].step(action)
+                # print(reward)
+                agents[i].update_buffer(scroll, reward)
 
             agents[i].learn_from_buffer()
 
@@ -63,6 +69,7 @@ def experiment_wrapper(feed_units, i, num_episodes, randomize, env_type):
     from supervised_agent import SupervisedAgent
     from supervised_agent_one_step import SupervisedAgentOneStep
     from dqn_agent import DQNAgent
+    from deep_exp_hyper_agent import DeepExpHyperAgent
     from deep_exp_agent import DeepExpAgent
     import numpy as np
 
@@ -80,16 +87,19 @@ def experiment_wrapper(feed_units, i, num_episodes, randomize, env_type):
 #                     bootstrap=False
             )
         )
-    agents = [
+    agents = ([
         # OracleAgent(feed_units, session_size),
-        SupervisedAgent(feed_units, 'supervised_{}_{}'.format(num_positive, len(feed_units))),
-        SupervisedAgentOneStep(feed_units, 'supervised_one_step_{}_{}'.format(num_positive, len(feed_units))),
-        DQNAgent([k for k in range(len(feed_units))], 'dqn_{}_{}'.format(num_positive, len(feed_units)))
-    ] + deep_exp_agents
+        # SupervisedAgent([k for k in range(len(feed_units))], 'supervised_{}_{}'.format(num_positive, len(feed_units))),
+        # SupervisedAgentOneStep([k for k in range(len(feed_units))], 'supervised_one_step_{}_{}'.format(num_positive, len(feed_units))),
+        DQNAgent([k for k in range(len(feed_units))], 'dqn_{}_{}'.format(num_positive, len(feed_units))),
+        DeepExpHyperAgent([k for k in range(len(feed_units))], 'hyper_deep_exploration_{}_{}'.format(num_positive, len(feed_units))),
+    ]
+    # + deep_exp_agents
+    )
 
     cumulative_reward = run_experiment(agents, feed_units, i, num_episodes, randomize, env_type)
 
-    np.save('experiment_{}_{}_{}_{}_{}'.format(
+    np.save('hyper_experiment_{}_{}_{}_{}_{}'.format(
         num_positive, len(feed_units), int(randomize), i, env_type), cumulative_reward)
 
 
@@ -127,14 +137,14 @@ def caller(n, k, num_experiment, num_episodes, randomize=False, env_type='sparse
 
 
 if __name__ == '__main__':
-    num_experiments = 10
+    num_experiments = 1
     inputs = []
 
     for n in range(5, 6):
-        for k in range(2, 3):
+        for k in range(0, 1):
             # for r in range(0, 1):
-            num_episodes = 2000
-            caller(n, k, num_experiments, num_episodes, env_type='sparse_reward')
+            num_episodes = 50000
+            caller(n, k, num_experiments, num_episodes, env_type='immediate_reward')
 
     writer.close()
 #     import torch.multiprocessing as mp
