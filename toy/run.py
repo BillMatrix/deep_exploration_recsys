@@ -71,6 +71,7 @@ def experiment_wrapper(feed_units, i, num_episodes, randomize, env_type):
     from dqn_agent import DQNAgent
     from deep_exp_hyper_agent import DeepExpHyperAgent
     from deep_exp_agent import DeepExpAgent
+    from deep_exp_ids_agent import DeepExpIDSAgent
     import numpy as np
 
     deep_exp_agents = []
@@ -91,15 +92,16 @@ def experiment_wrapper(feed_units, i, num_episodes, randomize, env_type):
         # OracleAgent(feed_units, session_size),
         # SupervisedAgent([k for k in range(len(feed_units))], 'supervised_{}_{}'.format(num_positive, len(feed_units))),
         # SupervisedAgentOneStep([k for k in range(len(feed_units))], 'supervised_one_step_{}_{}'.format(num_positive, len(feed_units))),
-        DQNAgent([k for k in range(len(feed_units))], 'dqn_{}_{}'.format(num_positive, len(feed_units))),
-        DeepExpHyperAgent([k for k in range(len(feed_units))], 'hyper_deep_exploration_{}_{}'.format(num_positive, len(feed_units))),
+        # DQNAgent([k for k in range(len(feed_units))], 'dqn_{}_{}'.format(num_positive, len(feed_units))),
+        # DeepExpHyperAgent([k for k in range(len(feed_units))], 'hyper_deep_exploration_{}_{}'.format(num_positive, len(feed_units))),
+        # DeepExpIDSAgent([k for k in range(len(feed_units))], 'ids_{}_{}'.format(num_positive, len(feed_units))),
     ]
     # + deep_exp_agents
     )
 
     cumulative_reward = run_experiment(agents, feed_units, i, num_episodes, randomize, env_type)
 
-    np.save('hyper_experiment_{}_{}_{}_{}_{}'.format(
+    np.save('ids_experiment_{}_{}_{}_{}_{}'.format(
         num_positive, len(feed_units), int(randomize), i, env_type), cumulative_reward)
 
 
@@ -137,14 +139,14 @@ def caller(n, k, num_experiment, num_episodes, randomize=False, env_type='sparse
 
 
 if __name__ == '__main__':
-    num_experiments = 1
+    num_experiments = 5
     inputs = []
 
     for n in range(5, 6):
-        for k in range(0, 1):
+        for k in range(2, 3):
             # for r in range(0, 1):
-            num_episodes = 50000
-            caller(n, k, num_experiments, num_episodes, env_type='immediate_reward')
+            num_episodes = 2000
+            caller(n, k, num_experiments, num_episodes, env_type='sparse_reward')
 
     writer.close()
 #     import torch.multiprocessing as mp

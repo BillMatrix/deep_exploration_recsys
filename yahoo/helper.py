@@ -161,6 +161,33 @@ class NCFMemory(object):
         return len(self.memory)
 
 
+NCFReplayTransition = namedtuple('NCFReplayTransition', (
+    'state', 'user_embedding', 'cur_feed_embedding',
+    'reward', 'next_state', 'next_user_embeddings',
+    'next_feed_embeddings'
+))
+
+
+class NCFReplayMemory(object):
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.memory = []
+        self.position = 0
+
+    def push(self, *args):
+        """Saves a transition."""
+        if len(self.memory) < self.capacity:
+            self.memory.append(None)
+        self.memory[self.position] = NCFReplayTransition(*args)
+        self.position = (self.position + 1) % self.capacity
+
+    def sample(self, batch_size):
+        return random.sample(self.memory, batch_size)
+
+    def __len__(self):
+        return len(self.memory)
+
+
 class NCF(nn.Module):
     def __init__(
         self,
@@ -247,7 +274,7 @@ class NCF(nn.Module):
             self.predict_layer.weight.data.copy_(0.5 * predict_weight)
             self.predict_layer.bias.data.copy_(0.5 * precit_bias)
 
-    def forward(self, user, item, dense_features):
+    def forward(self, user, item, dense_features, join_dim=1):
         if not self.model == 'MLP':
             embed_user_GMF = self.embed_user_GMF(user)
             embed_item_GMF = self.embed_item_GMF(item)
@@ -255,7 +282,7 @@ class NCF(nn.Module):
         if not self.model == 'GMF':
             embed_user_MLP = self.embed_user_MLP(user)
             embed_item_MLP = self.embed_item_MLP(item)
-            interaction = torch.cat((embed_user_MLP, embed_item_MLP), 1)
+            interaction = torch.cat((embed_user_MLP, embed_item_MLP), join_dim)
             output_MLP = self.MLP_layers(interaction)
 
         if self.model == 'GMF':
@@ -265,7 +292,36 @@ class NCF(nn.Module):
         else:
             concat = torch.cat(
                 (output_GMF, output_MLP, dense_features),
-                1,
+                join_dim,
             )
 
         return self.predict_layer(concat)
+
+
+class NCFWithPrior(nn.Module):
+    def __init__(self, f_diff, f_prior, scale=5):
+        """
+        :param dimensions: dimensions of the neural network
+        prior network with immutable weights and
+        difference network whose weights will be learnt
+        """
+
+        super(NCFWithPrior,self).__init__()
+        self.f_diff = f_diff
+        self.f_prior = f_prior
+        self.scale = scale
+
+    def forward(self, user, item, dense_features, join_dim=1):
+        """
+        :param x: input to the network
+        :return: computes f_diff(x) + f_prior(x)
+        performs forward pass of the network
+        """
+        return self.f_diff(user, item, dense_features, join_dim) + self.scale * self.f_prior(dense_features)
+
+    def parameters(self, recurse: bool = True):
+        """
+        :param recurse: bool Recursive or not
+        :return: all the parameters of the network that are mutable or learnable
+        """
+        return self.f_diff.parameters(recurse)

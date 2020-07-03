@@ -1,7 +1,7 @@
 # import ray
 # ray.init()
 
-user_count = 1
+user_count = 20
 
 def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, env_type, writer=None):
     import time
@@ -73,8 +73,10 @@ def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, e
     from yahoo_supervised_agent_one_step import YahooSupervisedAgentOneStep
     from yahoo_supervised_ncf_agent import YahooSupervisedNCFAgent
     from yahoo_supervised_ncf_agent_one_step import YahooSupervisedNCFOneStepAgent
+    from yahoo_dqn_ncf_agent import YahooDQNNCFAgent
     from yahoo_dqn_agent import YahooDQNAgent
     from yahoo_deep_exp_agent import YahooDeepExpAgent
+    from yahoo_deep_exp_ncf_agent import YahooDeepExpNCFAgent
     import numpy as np
     import os
 
@@ -86,8 +88,14 @@ def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, e
                 feed_units[0], user_features[0], feed_count,
                 'deep_exploration_{}_{}'.format(feed_count, prior),
                 prior_variance=10**prior,
-#                     bootstrap=False
             )
+        )
+        deep_exp_agents.append(
+            YahooDeepExpNCFAgent(
+                feed_units[0], user_features[0], 0,
+                feed_count, 'deep_exploration_ncf_{}_{}'.format(feed_count, prior),
+                prior_variance=10**prior,
+            ),
         )
     agents = [
         # OracleAgent(feed_units, session_size),
@@ -95,6 +103,7 @@ def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, e
         YahooSupervisedAgentOneStep(feed_units[0], user_features[0], feed_count, 'supervised_one_step_{}'.format(feed_count)),
         YahooSupervisedNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'supervised_ncf_{}'.format(feed_count)),
         YahooSupervisedNCFOneStepAgent(feed_units[0], user_features[0], 0, feed_count, 'supervised_ncf_one_step_{}'.format(feed_count)),
+        YahooDQNNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'dqn_ncf_{}'.format(feed_count)),
         YahooDQNAgent(feed_units[0], user_features[0], feed_count, 'dqn_{}'.format(feed_count))
     ] + deep_exp_agents
 
@@ -171,11 +180,16 @@ def caller(episode_length, candidate_count, num_experiment, num_episodes, experi
     # writer.close()
 
 if __name__ == '__main__':
+    import os
+
     num_experiments = 5
     inputs = []
 
-    num_episodes = 2000
+    num_episodes = 200
     episode_length = 10
     candidate_count = 4
-    experiment_name = 'experiment_sparse_80_single_user'
+    experiment_name = 'experiment_sparse_80_ncf'
+    filelist = [f for f in os.listdir('./{}/'.format(experiment_name)) if f.split('.')[0] == 'events']
+    for f in filelist:
+        os.remove(os.path.join('./{}/'.format(experiment_name), f))
     caller(episode_length, candidate_count, num_experiments, num_episodes, experiment_name, env_type='sparse_reward')
