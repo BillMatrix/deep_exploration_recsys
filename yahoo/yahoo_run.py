@@ -1,7 +1,7 @@
 # import ray
 # ray.init()
 
-user_count = 1
+user_count = 20
 
 def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, env_type, writer=None):
     import time
@@ -183,7 +183,7 @@ if __name__ == '__main__':
     num_experiments = 5
     inputs = []
 
-    num_episodes = 2000
+    num_episodes = 200
     episode_length = 10
     candidate_count = 4
     experiment_name = 'experiment_sparse_80_ncf'

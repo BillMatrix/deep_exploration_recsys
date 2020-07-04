@@ -103,7 +103,7 @@ class YahooSupervisedNCFOneStepAgent():
             best_index = best_index.item()
 
             if self.boltzmann and np.random.rand() < 0.05:
-                best_index = np.random.choice(len(outcomes.numpy().tolist()))
+                best_index = np.random.choice(len(outcomes.cpu().numpy().tolist()))
 
             best_action = self.current_feed_candidates[best_index]
             self.latest_feature = candidate_features[best_index]
