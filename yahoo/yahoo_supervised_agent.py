@@ -8,7 +8,8 @@ import copy
 import numpy as np
 from helper import SupervisedTransition, SupervisedMemory, MLP
 
-device = torch.device("cpu")
+has_gpu = torch.cuda.is_available()
+device = torch.device("cuda" if has_gpu else "cpu")
 
 
 class YahooSupervisedAgent():
@@ -74,7 +75,7 @@ class YahooSupervisedAgent():
 
         with torch.no_grad():
             outcomes = self.model(
-                torch.tensor(candidate_features, dtype=torch.double)
+                torch.tensor(candidate_features, dtype=torch.double).to(device)
             )
 
             _, best_index = torch.max(outcomes, 0)
@@ -104,8 +105,8 @@ class YahooSupervisedAgent():
     def learn_from_buffer(self):
         for i, data in enumerate(self.training_data):
             self.buffer.push(
-                torch.tensor([data], dtype=torch.double),
-                torch.tensor([[np.sum(self.rewards[i:])]], dtype=torch.double),
+                torch.tensor([data], dtype=torch.double).to(device),
+                torch.tensor([[np.sum(self.rewards[i:])]], dtype=torch.double).to(device),
             )
 
         if len(self.buffer) < self.batch_size:

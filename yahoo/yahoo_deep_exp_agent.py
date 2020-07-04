@@ -9,7 +9,7 @@ import numpy as np
 from helper import DQNWithPrior, ReplayMemory, Transition, MLP
 
 has_gpu = torch.cuda.is_available()
-device = torch.device("cpu")
+device = torch.device("cuda" if has_gpu else "cpu")
 
 
 class YahooDeepExpAgent():
@@ -107,7 +107,7 @@ class YahooDeepExpAgent():
 #         base_feature.append(self.interest_level)
         with torch.no_grad():
             outcomes = self.cur_net(
-                torch.tensor(candidate_features, dtype=torch.double)
+                torch.tensor(candidate_features, dtype=torch.double).to(device)
             )
 
             _, best_index = torch.max(outcomes, 0)
@@ -130,8 +130,8 @@ class YahooDeepExpAgent():
         self.current_feed_candidates = new_batch
         if not scroll:
             self.training_data.push(
-                torch.tensor([self.latest_feature], dtype=torch.double),
-                torch.tensor([reward], dtype=torch.double),
+                torch.tensor([self.latest_feature], dtype=torch.double).to(device),
+                torch.tensor([reward], dtype=torch.double).to(device),
                 None,
             )
             return
@@ -152,9 +152,9 @@ class YahooDeepExpAgent():
         candidate_features = np.array(candidate_features)
 
         self.training_data.push(
-            torch.tensor([self.latest_feature], dtype=torch.double),
-            torch.tensor([reward], dtype=torch.double),
-            torch.tensor([candidate_features], dtype=torch.double),
+            torch.tensor([self.latest_feature], dtype=torch.double).to(device),
+            torch.tensor([reward], dtype=torch.double).to(device),
+            torch.tensor([candidate_features], dtype=torch.double).to(device),
         )
 
     def learn_from_buffer(self):

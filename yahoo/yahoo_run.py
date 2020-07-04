@@ -1,7 +1,7 @@
 # import ray
 # ray.init()
 
-user_count = 20
+user_count = 1
 
 def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, env_type, writer=None):
     import time
@@ -9,7 +9,6 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
     import numpy as np
 
     cur_time = float(time.time())
-    target_interest_level = 0.8
 
 #     print('num units: {}, num negative: {}, randomize: {}, experiment: {}'.format(n, n - num_positive, r, exp))
 
@@ -35,7 +34,7 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
 
         for k, user_feature in enumerate(user_features):
             envs = [
-                YahooFeed(feeds, target_interest_level, user_model, user_feature, env_type)
+                YahooFeed(feeds, user_model, user_feature, env_type)
                 for _ in range(len(agents))
             ]
 
@@ -98,7 +97,6 @@ def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, e
             ),
         )
     agents = [
-        # OracleAgent(feed_units, session_size),
         YahooSupervisedAgent(feed_units[0], user_features[0], feed_count, 'supervised_{}'.format(feed_count)),
         YahooSupervisedAgentOneStep(feed_units[0], user_features[0], feed_count, 'supervised_one_step_{}'.format(feed_count)),
         YahooSupervisedNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'supervised_ncf_{}'.format(feed_count)),
@@ -185,7 +183,7 @@ if __name__ == '__main__':
     num_experiments = 5
     inputs = []
 
-    num_episodes = 200
+    num_episodes = 2000
     episode_length = 10
     candidate_count = 4
     experiment_name = 'experiment_sparse_80_ncf'

@@ -10,7 +10,7 @@ from scipy.special import softmax
 from helper import MLP, Transition, ReplayMemory
 
 has_gpu = torch.cuda.is_available()
-device = torch.device("cpu")
+device = torch.device("cuda" if has_gpu else "cpu")
 
 
 class YahooDQNAgent():
@@ -82,7 +82,7 @@ class YahooDQNAgent():
 #         base_feature.append(self.interest_level)
         with torch.no_grad():
             outcomes = self.model(
-                torch.tensor(candidate_features, dtype=torch.double)
+                torch.tensor(candidate_features, dtype=torch.double).to(device)
             )
 
             _, best_index = torch.max(outcomes, 0)
@@ -109,8 +109,8 @@ class YahooDQNAgent():
         self.current_feed_candidates = new_batch
         if not scroll:
             self.training_data.push(
-                torch.tensor([self.latest_feature], dtype=torch.double),
-                torch.tensor([reward], dtype=torch.double),
+                torch.tensor([self.latest_feature], dtype=torch.double).to(device),
+                torch.tensor([reward], dtype=torch.double).to(device),
                 None,
             )
             return
@@ -131,9 +131,9 @@ class YahooDQNAgent():
         candidate_features = np.array(candidate_features)
 
         self.training_data.push(
-            torch.tensor([self.latest_feature], dtype=torch.double),
-            torch.tensor([reward], dtype=torch.double),
-            torch.tensor([candidate_features], dtype=torch.double),
+            torch.tensor([self.latest_feature], dtype=torch.double).to(device),
+            torch.tensor([reward], dtype=torch.double).to(device),
+            torch.tensor([candidate_features], dtype=torch.double).to(device),
         )
 
     def learn_from_buffer(self):

@@ -12,7 +12,7 @@ class YahooFeedUnit(object):
 
 
 class YahooFeed(object):
-    def __init__(self, feeds, target_interest_level, user_model, user_features, env_type='sparse_reward'):
+    def __init__(self, feeds, user_model, user_features, env_type='sparse_reward'):
         self.feeds = feeds
         self.interest_level = 0.
         self.seen_units = []

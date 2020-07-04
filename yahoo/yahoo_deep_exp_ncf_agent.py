@@ -9,7 +9,7 @@ import numpy as np
 from helper import NCFWithPrior, NCFReplayMemory, NCFReplayTransition, NCF, MLP
 
 has_gpu = torch.cuda.is_available()
-device = torch.device("cpu")
+device = torch.device("cuda" if has_gpu else "cpu")
 
 
 class YahooDeepExpNCFAgent():
@@ -136,9 +136,9 @@ class YahooDeepExpNCFAgent():
 #         base_feature.append(self.interest_level)
         with torch.no_grad():
             outcomes = self.cur_net(
-                torch.tensor(candidate_user_embeddings, dtype=torch.long),
-                torch.tensor(candidate_feed_embeddings, dtype=torch.long),
-                torch.tensor(candidate_features, dtype=torch.double)
+                torch.tensor(candidate_user_embeddings, dtype=torch.long).to(device),
+                torch.tensor(candidate_feed_embeddings, dtype=torch.long).to(device),
+                torch.tensor(candidate_features, dtype=torch.double).to(device)
             )
 
             _, best_index = torch.max(outcomes, 0)
@@ -163,10 +163,10 @@ class YahooDeepExpNCFAgent():
         self.current_feed_candidates = new_batch
         if not scroll:
             self.training_data.push(
-                torch.tensor([self.latest_feature], dtype=torch.double),
-                torch.tensor([self.latest_user_embedding], dtype=torch.long),
-                torch.tensor([self.latest_feed_embedding], dtype=torch.long),
-                torch.tensor([reward], dtype=torch.double),
+                torch.tensor([self.latest_feature], dtype=torch.double).to(device),
+                torch.tensor([self.latest_user_embedding], dtype=torch.long).to(device),
+                torch.tensor([self.latest_feed_embedding], dtype=torch.long).to(device),
+                torch.tensor([reward], dtype=torch.double).to(device),
                 None,
                 None,
                 None,
@@ -193,13 +193,13 @@ class YahooDeepExpNCFAgent():
         candidate_features = np.array(candidate_features)
 
         self.training_data.push(
-            torch.tensor([self.latest_feature], dtype=torch.double),
-            torch.tensor([self.latest_user_embedding], dtype=torch.long),
-            torch.tensor([self.latest_feed_embedding], dtype=torch.long),
-            torch.tensor([reward], dtype=torch.double),
-            torch.tensor([candidate_features], dtype=torch.double),
-            torch.tensor([candidate_user_embeddings], dtype=torch.long),
-            torch.tensor([candidate_feed_embeddings], dtype=torch.long),
+            torch.tensor([self.latest_feature], dtype=torch.double).to(device),
+            torch.tensor([self.latest_user_embedding], dtype=torch.long).to(device),
+            torch.tensor([self.latest_feed_embedding], dtype=torch.long).to(device),
+            torch.tensor([reward], dtype=torch.double).to(device),
+            torch.tensor([candidate_features], dtype=torch.double).to(device),
+            torch.tensor([candidate_user_embeddings], dtype=torch.long).to(device),
+            torch.tensor([candidate_feed_embeddings], dtype=torch.long).to(device),
         )
 
     def learn_from_buffer(self):

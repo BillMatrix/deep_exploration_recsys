@@ -8,7 +8,8 @@ import copy
 import numpy as np
 from helper import NCFTransition, NCFMemory, NCF
 
-device = torch.device("cpu")
+has_gpu = torch.cuda.is_available()
+device = torch.device("cuda" if has_gpu else "cpu")
 
 
 class YahooSupervisedNCFOneStepAgent():
@@ -93,9 +94,9 @@ class YahooSupervisedNCFOneStepAgent():
 
         with torch.no_grad():
             outcomes = self.model(
-                torch.tensor(candidate_user_embeddings, dtype=torch.long),
-                torch.tensor(candidate_feed_embeddings, dtype=torch.long),
-                torch.tensor(candidate_features, dtype=torch.double)
+                torch.tensor(candidate_user_embeddings, dtype=torch.long).to(device),
+                torch.tensor(candidate_feed_embeddings, dtype=torch.long).to(device),
+                torch.tensor(candidate_features, dtype=torch.double).to(device)
             )
 
             _, best_index = torch.max(outcomes, 0)
@@ -129,10 +130,10 @@ class YahooSupervisedNCFOneStepAgent():
     def learn_from_buffer(self):
         for i, data in enumerate(self.training_data):
             self.buffer.push(
-                torch.tensor([data], dtype=torch.double),
-                torch.tensor([self.training_user_embeddings[i]], dtype=torch.long),
-                torch.tensor([self.training_feed_embeddings[i]], dtype=torch.long),
-                torch.tensor([[self.rewards[i]]], dtype=torch.double),
+                torch.tensor([data], dtype=torch.double).to(device),
+                torch.tensor([self.training_user_embeddings[i]], dtype=torch.long).to(device),
+                torch.tensor([self.training_feed_embeddings[i]], dtype=torch.long).to(device),
+                torch.tensor([[self.rewards[i]]], dtype=torch.double).to(device),
             )
 
         if len(self.buffer) < self.batch_size:
