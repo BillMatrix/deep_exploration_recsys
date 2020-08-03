@@ -117,8 +117,13 @@ class YahooDQNNCFAgent():
             _, best_index = torch.max(outcomes, 0)
             best_index = best_index.item()
 
-            if self.boltzmann and np.random.rand() < self.epsilon:
-                best_index = np.random.choice(len(outcomes.cpu().numpy().tolist()))
+            if self.boltzmann:
+                best_index = np.random.choice(
+                    len(available_actions),
+                    p=torch.nn.functional.softmax(outcomes.reshape((len(available_actions))), dim=0).cpu().numpy()
+                )
+            elif np.random.rand() < 0.05:
+                best_index = np.random.choice(len(available_actions))
 
             best_action = self.current_feed_candidates[best_index]
             self.latest_feature = candidate_features[best_index]

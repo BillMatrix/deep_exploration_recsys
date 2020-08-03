@@ -80,6 +80,7 @@ class YahooSupervisedAgentOneStep():
             best_index = best_index.item()
 
             if self.boltzmann:
+                outcomes = outcomes / 0.05
                 best_index = np.random.choice(
                     len(available_actions),
                     p=torch.nn.functional.softmax(outcomes.reshape((len(available_actions))), dim=0).cpu().numpy()
