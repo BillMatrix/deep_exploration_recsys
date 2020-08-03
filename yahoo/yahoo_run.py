@@ -186,7 +186,7 @@ if __name__ == '__main__':
     num_episodes = 200
     episode_length = 10
     candidate_count = 4
-    experiment_name = 'experiment_80_single_user_ncf_static'
+    experiment_name = 'experiment_80_ncf'
     filelist = [f for f in os.listdir('./{}/'.format(experiment_name)) if f.split('.')[0] == 'events']
     for f in filelist:
         os.remove(os.path.join('./{}/'.format(experiment_name), f))

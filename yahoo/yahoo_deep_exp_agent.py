@@ -25,7 +25,7 @@ class YahooDeepExpAgent():
         prior_variance: float = 1.0,
         model_dims: List[int] = [50, 25],
         lr: float = 1e-3,
-        batch_size: int = 128,
+        batch_size: int = 32,
         noise_variance = 0
     ):
         self.initial_feed_candidates = initial_feed_candidates
