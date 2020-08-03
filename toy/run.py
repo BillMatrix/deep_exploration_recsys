@@ -90,13 +90,13 @@ def experiment_wrapper(feed_units, i, num_episodes, randomize, env_type):
         )
     agents = ([
         # OracleAgent(feed_units, session_size),
-        # SupervisedAgent([k for k in range(len(feed_units))], 'supervised_{}_{}'.format(num_positive, len(feed_units))),
-        # SupervisedAgentOneStep([k for k in range(len(feed_units))], 'supervised_one_step_{}_{}'.format(num_positive, len(feed_units))),
-        # DQNAgent([k for k in range(len(feed_units))], 'dqn_{}_{}'.format(num_positive, len(feed_units))),
+        SupervisedAgent([k for k in range(len(feed_units))], 'supervised_{}_{}'.format(num_positive, len(feed_units))),
+        SupervisedAgentOneStep([k for k in range(len(feed_units))], 'supervised_one_step_{}_{}'.format(num_positive, len(feed_units))),
+        DQNAgent([k for k in range(len(feed_units))], 'dqn_{}_{}'.format(num_positive, len(feed_units))),
         # DeepExpHyperAgent([k for k in range(len(feed_units))], 'hyper_deep_exploration_{}_{}'.format(num_positive, len(feed_units))),
         # DeepExpIDSAgent([k for k in range(len(feed_units))], 'ids_{}_{}'.format(num_positive, len(feed_units))),
     ]
-    # + deep_exp_agents
+    + deep_exp_agents
     )
 
     cumulative_reward = run_experiment(agents, feed_units, i, num_episodes, randomize, env_type)

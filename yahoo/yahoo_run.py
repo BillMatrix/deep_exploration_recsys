@@ -1,7 +1,7 @@
 # import ray
 # ray.init()
 
-user_count = 1
+user_count = 20
 
 def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, env_type, writer=None):
     import time
@@ -183,11 +183,11 @@ if __name__ == '__main__':
     num_experiments = 5
     inputs = []
 
-    num_episodes = 2000
+    num_episodes = 200
     episode_length = 10
     candidate_count = 4
-    experiment_name = 'experiment_sparse_80_ncf'
+    experiment_name = 'experiment_80_single_user_ncf_static'
     filelist = [f for f in os.listdir('./{}/'.format(experiment_name)) if f.split('.')[0] == 'events']
     for f in filelist:
         os.remove(os.path.join('./{}/'.format(experiment_name), f))
-    caller(episode_length, candidate_count, num_experiments, num_episodes, experiment_name, env_type='sparse_reward')
+    caller(episode_length, candidate_count, num_experiments, num_episodes, experiment_name, env_type='immediate_reward')

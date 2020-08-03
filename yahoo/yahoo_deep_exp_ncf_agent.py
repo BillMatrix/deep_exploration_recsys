@@ -48,7 +48,7 @@ class YahooDeepExpNCFAgent():
         self.noise_variance = noise_variance
 
         self.ensemble_size: int = ensemble_size
-        self.training_data = NCFReplayMemory(100000)
+        self.training_datas = [NCFReplayMemory(100000) for _ in range(self.ensemble_size)]
 
         self.latest_feature = None
         self.latest_feed_embedding = None
@@ -104,7 +104,8 @@ class YahooDeepExpNCFAgent():
         for i in range(self.ensemble_size):
             self.optimizers.append(optim.Adam(self.models[i].parameters(), lr=lr))
 
-        self.cur_net = self.target_nets[np.random.choice(self.ensemble_size)]
+        self.cur_index = np.random.choice(self.ensemble_size)
+        self.cur_net = self.target_nets[self.cur_index]
         self.batch_size = batch_size
         self.gamma = 0.99
         self.running_loss = 0.0
@@ -162,7 +163,7 @@ class YahooDeepExpNCFAgent():
         self.cum_rewards += reward
         self.current_feed_candidates = new_batch
         if not scroll:
-            self.training_data.push(
+            self.training_datas[self.cur_index].push(
                 torch.tensor([self.latest_feature], dtype=torch.double).to(device),
                 torch.tensor([self.latest_user_embedding], dtype=torch.long).to(device),
                 torch.tensor([self.latest_feed_embedding], dtype=torch.long).to(device),
@@ -192,7 +193,7 @@ class YahooDeepExpNCFAgent():
             candidate_features.append(candidate_feature)
         candidate_features = np.array(candidate_features)
 
-        self.training_data.push(
+        self.training_datas[self.cur_index].push(
             torch.tensor([self.latest_feature], dtype=torch.double).to(device),
             torch.tensor([self.latest_user_embedding], dtype=torch.long).to(device),
             torch.tensor([self.latest_feed_embedding], dtype=torch.long).to(device),
@@ -203,14 +204,15 @@ class YahooDeepExpNCFAgent():
         )
 
     def learn_from_buffer(self):
-        if len(self.training_data) < self.batch_size:
-            return
+        for i in range(self.ensemble_size):
+            if len(self.training_datas[i]) < self.batch_size:
+                return
 
         loss_ensemble = 0.0
         for _ in range(10):
-            transitions = self.training_data.sample(self.batch_size)
-            batch = NCFReplayTransition(*zip(*transitions))
             for i in range(self.ensemble_size):
+                transitions = self.training_datas[i].sample(self.batch_size)
+                batch = NCFReplayTransition(*zip(*transitions))
                 non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
                                         batch.next_state)), device=device, dtype=torch.bool)
                 state_batch = torch.cat(batch.state)
@@ -266,7 +268,8 @@ class YahooDeepExpNCFAgent():
             self.target_nets[i].eval()
             self.target_nets[i].to(device)
 
-        self.cur_net = self.target_nets[np.random.choice(self.ensemble_size)]
+        self.cur_index = np.random.choice(self.ensemble_size)
+        self.cur_net = self.target_nets[self.cur_index]
         self.history_actions = []
         self.cum_reward_history.append(self.cum_rewards)
         self.current_feed = 0
