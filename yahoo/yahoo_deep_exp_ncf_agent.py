@@ -165,7 +165,7 @@ class YahooDeepExpNCFAgent():
         self.cum_rewards += reward
         self.current_feed_candidates = new_batch
         if not scroll:
-            if bootstrap:
+            if self.bootstrap:
                 for i in range(self.ensemble_size):
                     if np.random.choice(2) == 1:
                         self.training_datas[i].push(
@@ -209,7 +209,7 @@ class YahooDeepExpNCFAgent():
             candidate_features.append(candidate_feature)
         candidate_features = np.array(candidate_features)
 
-        if bootstrap:
+        if self.bootstrap:
             for i in range(self.ensemble_size):
                 if np.random.choice(2) == 1:
                     self.training_datas[i].push(
