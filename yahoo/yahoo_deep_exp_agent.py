@@ -24,6 +24,7 @@ class YahooDeepExpAgent():
         ensemble_size: int = 10,
         prior_variance: float = 1.0,
         model_dims: List[int] = [50, 25],
+        bootstrap: bool = True,
         lr: float = 1e-3,
         batch_size: int = 32,
         noise_variance = 0
@@ -33,6 +34,7 @@ class YahooDeepExpAgent():
         self.user_features = user_features
         self.feed_counts = feed_counts
         self.agent_name = agent_name
+        self.bootstrap = bootstrap
 
         self.cum_rewards: float = 0.
         self.interest_level = 0.
@@ -130,11 +132,21 @@ class YahooDeepExpAgent():
         self.cum_rewards += reward
         self.current_feed_candidates = new_batch
         if not scroll:
-            self.training_datas[self.cur_index].push(
-                torch.tensor([self.latest_feature], dtype=torch.double).to(device),
-                torch.tensor([reward], dtype=torch.double).to(device),
-                None,
-            )
+            if self.bootstrap:
+                for i in range(self.ensemble_size):
+                    if np.random.choice(2) == 1:
+                        self.training_datas[i].push(
+                            torch.tensor([self.latest_feature], dtype=torch.double).to(device),
+                            torch.tensor([reward], dtype=torch.double).to(device),
+                            None,
+                        )
+            else:
+                for i in range(self.ensemble_size):
+                    self.training_datas[self.cur_index].push(
+                        torch.tensor([self.latest_feature], dtype=torch.double).to(device),
+                        torch.tensor([reward], dtype=torch.double).to(device),
+                        None,
+                    )
             return
 
         available_actions = [candidate.features for candidate in self.current_feed_candidates]
@@ -152,11 +164,21 @@ class YahooDeepExpAgent():
             candidate_features.append(candidate_feature)
         candidate_features = np.array(candidate_features)
 
-        self.training_datas[self.cur_index].push(
-            torch.tensor([self.latest_feature], dtype=torch.double).to(device),
-            torch.tensor([reward], dtype=torch.double).to(device),
-            torch.tensor([candidate_features], dtype=torch.double).to(device),
-        )
+        if self.bootstrap:
+            for i in range(self.ensemble_size):
+                if np.random.choice(2) == 1:
+                    self.training_datas[self.cur_index].push(
+                        torch.tensor([self.latest_feature], dtype=torch.double).to(device),
+                        torch.tensor([reward], dtype=torch.double).to(device),
+                        torch.tensor([candidate_features], dtype=torch.double).to(device),
+                    )
+        else:
+            for i in range(self.ensemble_size):
+                self.training_datas[self.cur_index].push(
+                    torch.tensor([self.latest_feature], dtype=torch.double).to(device),
+                    torch.tensor([reward], dtype=torch.double).to(device),
+                    torch.tensor([candidate_features], dtype=torch.double).to(device),
+                )
 
     def learn_from_buffer(self):
         for i in range(self.ensemble_size):

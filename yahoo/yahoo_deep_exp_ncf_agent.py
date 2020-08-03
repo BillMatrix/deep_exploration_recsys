@@ -29,6 +29,7 @@ class YahooDeepExpNCFAgent():
         model_dims: List[int] = [50, 25],
         lr: float = 1e-3,
         batch_size: int = 32,
+        bootstrap: bool = True,
         noise_variance = 0
     ):
         self.initial_feed_candidates = initial_feed_candidates
@@ -39,6 +40,7 @@ class YahooDeepExpNCFAgent():
         self.agent_name = agent_name
         self.feed_num = feed_num
         self.user_num = user_num
+        self.bootstrap = bootstrap
 
         self.cum_rewards: float = 0.
         self.interest_level = 0.
@@ -163,15 +165,29 @@ class YahooDeepExpNCFAgent():
         self.cum_rewards += reward
         self.current_feed_candidates = new_batch
         if not scroll:
-            self.training_datas[self.cur_index].push(
-                torch.tensor([self.latest_feature], dtype=torch.double).to(device),
-                torch.tensor([self.latest_user_embedding], dtype=torch.long).to(device),
-                torch.tensor([self.latest_feed_embedding], dtype=torch.long).to(device),
-                torch.tensor([reward], dtype=torch.double).to(device),
-                None,
-                None,
-                None,
-            )
+            if bootstrap:
+                for i in range(self.ensemble_size):
+                    if np.random.choice(2) == 1:
+                        self.training_datas[i].push(
+                            torch.tensor([self.latest_feature], dtype=torch.double).to(device),
+                            torch.tensor([self.latest_user_embedding], dtype=torch.long).to(device),
+                            torch.tensor([self.latest_feed_embedding], dtype=torch.long).to(device),
+                            torch.tensor([reward], dtype=torch.double).to(device),
+                            None,
+                            None,
+                            None,
+                        )
+            else:
+                for i in range(self.ensemble_size):
+                    self.training_datas[i].push(
+                        torch.tensor([self.latest_feature], dtype=torch.double).to(device),
+                        torch.tensor([self.latest_user_embedding], dtype=torch.long).to(device),
+                        torch.tensor([self.latest_feed_embedding], dtype=torch.long).to(device),
+                        torch.tensor([reward], dtype=torch.double).to(device),
+                        None,
+                        None,
+                        None,
+                    )
             return
 
         available_actions = [candidate for candidate in self.current_feed_candidates]
@@ -193,15 +209,29 @@ class YahooDeepExpNCFAgent():
             candidate_features.append(candidate_feature)
         candidate_features = np.array(candidate_features)
 
-        self.training_datas[self.cur_index].push(
-            torch.tensor([self.latest_feature], dtype=torch.double).to(device),
-            torch.tensor([self.latest_user_embedding], dtype=torch.long).to(device),
-            torch.tensor([self.latest_feed_embedding], dtype=torch.long).to(device),
-            torch.tensor([reward], dtype=torch.double).to(device),
-            torch.tensor([candidate_features], dtype=torch.double).to(device),
-            torch.tensor([candidate_user_embeddings], dtype=torch.long).to(device),
-            torch.tensor([candidate_feed_embeddings], dtype=torch.long).to(device),
-        )
+        if bootstrap:
+            for i in range(self.ensemble_size):
+                if np.random.choice(2) == 1:
+                    self.training_datas[i].push(
+                        torch.tensor([self.latest_feature], dtype=torch.double).to(device),
+                        torch.tensor([self.latest_user_embedding], dtype=torch.long).to(device),
+                        torch.tensor([self.latest_feed_embedding], dtype=torch.long).to(device),
+                        torch.tensor([reward], dtype=torch.double).to(device),
+                        torch.tensor([candidate_features], dtype=torch.double).to(device),
+                        torch.tensor([candidate_user_embeddings], dtype=torch.long).to(device),
+                        torch.tensor([candidate_feed_embeddings], dtype=torch.long).to(device),
+                    )
+        else:
+            for i in range(self.ensemble_size):
+                self.training_datas[i].push(
+                    torch.tensor([self.latest_feature], dtype=torch.double).to(device),
+                    torch.tensor([self.latest_user_embedding], dtype=torch.long).to(device),
+                    torch.tensor([self.latest_feed_embedding], dtype=torch.long).to(device),
+                    torch.tensor([reward], dtype=torch.double).to(device),
+                    torch.tensor([candidate_features], dtype=torch.double).to(device),
+                    torch.tensor([candidate_user_embeddings], dtype=torch.long).to(device),
+                    torch.tensor([candidate_feed_embeddings], dtype=torch.long).to(device),
+                )
 
     def learn_from_buffer(self):
         for i in range(self.ensemble_size):
