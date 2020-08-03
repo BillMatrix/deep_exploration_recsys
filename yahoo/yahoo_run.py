@@ -97,10 +97,14 @@ def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, e
             ),
         )
     agents = [
-        YahooSupervisedAgent(feed_units[0], user_features[0], feed_count, 'supervised_{}'.format(feed_count)),
-        YahooSupervisedAgentOneStep(feed_units[0], user_features[0], feed_count, 'supervised_one_step_{}'.format(feed_count)),
-        YahooSupervisedNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'supervised_ncf_{}'.format(feed_count)),
-        YahooSupervisedNCFOneStepAgent(feed_units[0], user_features[0], 0, feed_count, 'supervised_ncf_one_step_{}'.format(feed_count)),
+        YahooSupervisedAgent(feed_units[0], user_features[0], feed_count, 'boltzmann_TD1_{}'.format(feed_count)),
+        YahooSupervisedAgentOneStep(feed_units[0], user_features[0], feed_count, 'boltzmann_supervised_{}'.format(feed_count)),
+        YahooSupervisedNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'boltzmann_TD1_ncf_{}'.format(feed_count)),
+        YahooSupervisedNCFOneStepAgent(feed_units[0], user_features[0], 0, feed_count, 'boltzmann_supervised_ncf_{}'.format(feed_count)),
+        YahooSupervisedAgent(feed_units[0], user_features[0], feed_count, 'TD1_{}'.format(feed_count), boltzmann=False),
+        YahooSupervisedAgentOneStep(feed_units[0], user_features[0], feed_count, 'supervised_{}'.format(feed_count), boltzmann=False),
+        YahooSupervisedNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'TD1_ncf_{}'.format(feed_count), boltzmann=False),
+        YahooSupervisedNCFOneStepAgent(feed_units[0], user_features[0], 0, feed_count, 'supervised_ncf_{}'.format(feed_count), boltzmann=False),
         YahooDQNNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'dqn_ncf_{}'.format(feed_count)),
         YahooDQNAgent(feed_units[0], user_features[0], feed_count, 'dqn_{}'.format(feed_count))
     ] + deep_exp_agents
