@@ -105,8 +105,10 @@ def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, e
         YahooSupervisedAgentOneStep(feed_units[0], user_features[0], feed_count, 'supervised_{}'.format(feed_count), boltzmann=False),
         YahooSupervisedNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'TD1_ncf_{}'.format(feed_count), boltzmann=False),
         YahooSupervisedNCFOneStepAgent(feed_units[0], user_features[0], 0, feed_count, 'supervised_ncf_{}'.format(feed_count), boltzmann=False),
-        YahooDQNNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'dqn_ncf_{}'.format(feed_count)),
-        YahooDQNAgent(feed_units[0], user_features[0], feed_count, 'dqn_{}'.format(feed_count))
+        YahooDQNNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'boltzmann_dqn_ncf_{}'.format(feed_count)),
+        YahooDQNAgent(feed_units[0], user_features[0], feed_count, 'boltzmann_dqn_{}'.format(feed_count)),
+        YahooDQNNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'dqn_ncf_{}'.format(feed_count), boltzmann=False),
+        YahooDQNAgent(feed_units[0], user_features[0], feed_count, 'dqn_{}'.format(feed_count), boltzmann=False),
     ] + deep_exp_agents
 
     cumulative_reward = run_experiment(agents, feed_units, user_model, user_features, i, num_episodes, env_type, writer)

@@ -24,7 +24,7 @@ class YahooDQNAgent():
             user_feature_count = 6,
             model_dims: List[int] = [50, 25],
             lr: float = 1e-3,
-            boltzmann: bool = False,
+            boltzmann: bool = True,
             epsilon: float = 0.05,
             batch_size: int = 128,
     ):

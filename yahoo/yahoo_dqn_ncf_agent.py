@@ -27,7 +27,7 @@ class YahooDQNNCFAgent():
             user_feature_count = 6,
             model_dims: List[int] = [50, 25],
             lr: float = 1e-3,
-            boltzmann: bool = False,
+            boltzmann: bool = True,
             epsilon: float = 0.05,
             batch_size: int = 128,
     ):
@@ -118,6 +118,7 @@ class YahooDQNNCFAgent():
             best_index = best_index.item()
 
             if self.boltzmann:
+                outcomes = outcomes / 0.05
                 best_index = np.random.choice(
                     len(available_actions),
                     p=torch.nn.functional.softmax(outcomes.reshape((len(available_actions))), dim=0).cpu().numpy()
