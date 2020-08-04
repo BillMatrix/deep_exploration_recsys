@@ -87,6 +87,7 @@ def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, e
                 feed_units[0], user_features[0], feed_count,
                 'deep_exploration_{}_{}'.format(feed_count, prior),
                 prior_variance=10**prior,
+                bootstrap=False,
             )
         )
         deep_exp_agents.append(
@@ -94,6 +95,7 @@ def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, e
                 feed_units[0], user_features[0], 0,
                 feed_count, 'deep_exploration_ncf_{}_{}'.format(feed_count, prior),
                 prior_variance=10**prior,
+                bootstrap=False,
             ),
         )
     agents = [
