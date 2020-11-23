@@ -158,7 +158,7 @@ def generate_feeds(episode_length, candidate_count):
 
     return feed_units
 
-def caller(episode_length, candidate_count, num_experiment, num_episodes, experiment_name, env_type):
+def caller(episode_length, candidate_count, num_experiment, num_episodes, experiment_name, env_type='sparse_reward'):
     import random
     import pickle as pkl
     import numpy as np
