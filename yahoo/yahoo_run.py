@@ -1,7 +1,7 @@
 # import ray
 # ray.init()
 
-user_count = 20
+user_count = 100
 
 def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, env_type, writer=None):
     import time
@@ -82,35 +82,35 @@ def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, e
     deep_exp_agents = []
     feed_units = generate_feeds(episode_length, candidate_count)
     for prior in range(0, 1):
-        deep_exp_agents.append(
-            YahooDeepExpAgent(
-                feed_units[0], user_features[0], feed_count,
-                'deep_exploration_{}_{}'.format(feed_count, prior),
-                prior_variance=10**prior,
-                bootstrap=False,
-            )
-        )
+        # deep_exp_agents.append(
+        #     YahooDeepExpAgent(
+        #         feed_units[0], user_features[0], feed_count,
+        #         'deep_exploration_{}_{}'.format(feed_count, prior),
+        #         prior_variance=10**prior,
+        #         bootstrap=False,
+        #     )
+        # )
         deep_exp_agents.append(
             YahooDeepExpNCFAgent(
                 feed_units[0], user_features[0], 0,
-                feed_count, 'deep_exploration_ncf_{}_{}'.format(feed_count, prior),
+                feed_count, 'NCFDE',
                 prior_variance=10**prior,
                 bootstrap=False,
             ),
         )
     agents = [
-        YahooSupervisedAgent(feed_units[0], user_features[0], feed_count, 'boltzmann_TD1_{}'.format(feed_count)),
-        YahooSupervisedAgentOneStep(feed_units[0], user_features[0], feed_count, 'boltzmann_supervised_{}'.format(feed_count)),
-        YahooSupervisedNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'boltzmann_TD1_ncf_{}'.format(feed_count)),
-        YahooSupervisedNCFOneStepAgent(feed_units[0], user_features[0], 0, feed_count, 'boltzmann_supervised_ncf_{}'.format(feed_count)),
-        YahooSupervisedAgent(feed_units[0], user_features[0], feed_count, 'TD1_{}'.format(feed_count), boltzmann=False),
-        YahooSupervisedAgentOneStep(feed_units[0], user_features[0], feed_count, 'supervised_{}'.format(feed_count), boltzmann=False),
-        YahooSupervisedNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'TD1_ncf_{}'.format(feed_count), boltzmann=False),
-        YahooSupervisedNCFOneStepAgent(feed_units[0], user_features[0], 0, feed_count, 'supervised_ncf_{}'.format(feed_count), boltzmann=False),
-        YahooDQNNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'boltzmann_dqn_ncf_{}'.format(feed_count)),
-        YahooDQNAgent(feed_units[0], user_features[0], feed_count, 'boltzmann_dqn_{}'.format(feed_count)),
-        YahooDQNNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'dqn_ncf_{}'.format(feed_count), boltzmann=False),
-        YahooDQNAgent(feed_units[0], user_features[0], feed_count, 'dqn_{}'.format(feed_count), boltzmann=False),
+        # YahooSupervisedAgent(feed_units[0], user_features[0], feed_count, 'boltzmann_TD1_{}'.format(feed_count)),
+        # YahooSupervisedAgentOneStep(feed_units[0], user_features[0], feed_count, 'boltzmann_supervised_{}'.format(feed_count)),
+        # YahooSupervisedNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'boltzmann_TD1_ncf_{}'.format(feed_count)),
+        # YahooSupervisedNCFOneStepAgent(feed_units[0], user_features[0], 0, feed_count, 'boltzmann_supervised_ncf_{}'.format(feed_count)),
+        # YahooSupervisedAgent(feed_units[0], user_features[0], feed_count, 'TD1_{}'.format(feed_count), boltzmann=False),
+        # YahooSupervisedAgentOneStep(feed_units[0], user_features[0], feed_count, 'supervised_{}'.format(feed_count), boltzmann=False),
+        YahooSupervisedNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'NCF TD(1)', boltzmann=False),
+        # YahooSupervisedNCFOneStepAgent(feed_units[0], user_features[0], 0, feed_count, 'supervised_ncf_{}'.format(feed_count), boltzmann=False),
+        # YahooDQNNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'boltzmann_dqn_ncf_{}'.format(feed_count)),
+        # YahooDQNAgent(feed_units[0], user_features[0], feed_count, 'boltzmann_dqn_{}'.format(feed_count)),
+        YahooDQNNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'NCF TD(0)', boltzmann=False),
+        # YahooDQNAgent(feed_units[0], user_features[0], feed_count, 'dqn_{}'.format(feed_count), boltzmann=False),
     ] + deep_exp_agents
 
     cumulative_reward = run_experiment(agents, feed_units, user_model, user_features, i, num_episodes, env_type, writer)
@@ -188,7 +188,7 @@ def caller(episode_length, candidate_count, num_experiment, num_episodes, experi
 if __name__ == '__main__':
     import os
 
-    num_experiments = 5
+    num_experiments = 20
     inputs = []
 
     num_episodes = 200
@@ -198,4 +198,4 @@ if __name__ == '__main__':
     filelist = [f for f in os.listdir('./{}/'.format(experiment_name)) if f.split('.')[0] == 'events']
     for f in filelist:
         os.remove(os.path.join('./{}/'.format(experiment_name), f))
-    caller(episode_length, candidate_count, num_experiments, num_episodes, experiment_name, env_type='immediate_reward')
+    caller(episode_length, candidate_count, num_experiments, num_episodes, experiment_name)
