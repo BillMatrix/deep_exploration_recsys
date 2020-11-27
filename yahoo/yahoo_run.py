@@ -1,7 +1,7 @@
 # import ray
 # ray.init()
 
-user_count = 100
+user_count = 10000
 
 def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, env_type, writer=None):
     import time
@@ -127,7 +127,7 @@ def generate_feeds(episode_length, candidate_count):
 
     article_count = 0
 
-    all_article_features = pkl.load(open('all_article_features.pkl', 'rb'))
+    all_article_features = pkl.load(open('all_article_features_new.pkl', 'rb'))
     filtered_article_features = np.array(list(
         filter(lambda x: len(x) == 6, list(all_article_features.values()))))
     selected_indices = np.random.choice(
@@ -164,7 +164,7 @@ def caller(episode_length, candidate_count, num_experiment, num_episodes, experi
     import numpy as np
     from torch.utils.tensorboard import SummaryWriter
 
-    all_user_features = pkl.load(open('all_user_features.pkl', 'rb'))
+    all_user_features = pkl.load(open('all_user_features_new.pkl', 'rb'))
     user_features = all_user_features[:user_count]
 
     user_model = pkl.load(open('learned_user_intent_model.pkl', 'rb'))
@@ -188,13 +188,13 @@ def caller(episode_length, candidate_count, num_experiment, num_episodes, experi
 if __name__ == '__main__':
     import os
 
-    num_experiments = 20
+    num_experiments = 10
     inputs = []
 
     num_episodes = 200
     episode_length = 10
     candidate_count = 4
-    experiment_name = 'experiment_80_ncf'
+    experiment_name = 'experiment_80_ncf_large'
     filelist = [f for f in os.listdir('./{}/'.format(experiment_name)) if f.split('.')[0] == 'events']
     for f in filelist:
         os.remove(os.path.join('./{}/'.format(experiment_name), f))

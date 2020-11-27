@@ -12,3 +12,6 @@ toy/immediate*
 *.jpg
 *.pdf
 hyper*
+*.pptx
+*.bmp
+*_new.pkl
