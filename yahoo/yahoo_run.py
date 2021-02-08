@@ -1,7 +1,7 @@
 # import ray
 # ray.init()
 
-user_count = 10000
+user_count = 20
 
 def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, env_type, writer=None):
     import time
@@ -9,8 +9,6 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
     import numpy as np
 
     cur_time = float(time.time())
-
-#     print('num units: {}, num negative: {}, randomize: {}, experiment: {}'.format(n, n - num_positive, r, exp))
 
     agents_episode_reward = {}
     agents_cumulative_reward = {}
@@ -37,11 +35,6 @@ def run_experiment(agents, feeds, user_model, user_features, exp, num_episodes, 
                 YahooFeed(feeds, user_model, user_feature, env_type)
                 for _ in range(len(agents))
             ]
-
-            # for i, agent in enumerate(agents):
-            #     print(agent.agent_name, agent.cum_rewards)
-            #     print(envs[i].interest_level)
-                # print(envs[i].current_feed)
 
             for i, agent in enumerate(agents):
                 envs[i].reset(user_feature)
@@ -82,14 +75,6 @@ def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, e
     deep_exp_agents = []
     feed_units = generate_feeds(episode_length, candidate_count)
     for prior in range(0, 1):
-        # deep_exp_agents.append(
-        #     YahooDeepExpAgent(
-        #         feed_units[0], user_features[0], feed_count,
-        #         'deep_exploration_{}_{}'.format(feed_count, prior),
-        #         prior_variance=10**prior,
-        #         bootstrap=False,
-        #     )
-        # )
         deep_exp_agents.append(
             YahooDeepExpNCFAgent(
                 feed_units[0], user_features[0], 0,
@@ -99,18 +84,8 @@ def experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, e
             ),
         )
     agents = [
-        # YahooSupervisedAgent(feed_units[0], user_features[0], feed_count, 'boltzmann_TD1_{}'.format(feed_count)),
-        # YahooSupervisedAgentOneStep(feed_units[0], user_features[0], feed_count, 'boltzmann_supervised_{}'.format(feed_count)),
-        # YahooSupervisedNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'boltzmann_TD1_ncf_{}'.format(feed_count)),
-        # YahooSupervisedNCFOneStepAgent(feed_units[0], user_features[0], 0, feed_count, 'boltzmann_supervised_ncf_{}'.format(feed_count)),
-        # YahooSupervisedAgent(feed_units[0], user_features[0], feed_count, 'TD1_{}'.format(feed_count), boltzmann=False),
-        # YahooSupervisedAgentOneStep(feed_units[0], user_features[0], feed_count, 'supervised_{}'.format(feed_count), boltzmann=False),
         YahooSupervisedNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'NCF TD(1)', boltzmann=False),
-        # YahooSupervisedNCFOneStepAgent(feed_units[0], user_features[0], 0, feed_count, 'supervised_ncf_{}'.format(feed_count), boltzmann=False),
-        # YahooDQNNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'boltzmann_dqn_ncf_{}'.format(feed_count)),
-        # YahooDQNAgent(feed_units[0], user_features[0], feed_count, 'boltzmann_dqn_{}'.format(feed_count)),
         YahooDQNNCFAgent(feed_units[0], user_features[0], 0, feed_count, 'NCF TD(0)', boltzmann=False),
-        # YahooDQNAgent(feed_units[0], user_features[0], feed_count, 'dqn_{}'.format(feed_count), boltzmann=False),
     ] + deep_exp_agents
 
     cumulative_reward = run_experiment(agents, feed_units, user_model, user_features, i, num_episodes, env_type, writer)
@@ -127,7 +102,7 @@ def generate_feeds(episode_length, candidate_count):
 
     article_count = 0
 
-    all_article_features = pkl.load(open('all_article_features_new.pkl', 'rb'))
+    all_article_features = pkl.load(open('all_article_features.pkl', 'rb'))
     filtered_article_features = np.array(list(
         filter(lambda x: len(x) == 6, list(all_article_features.values()))))
     selected_indices = np.random.choice(
@@ -164,7 +139,7 @@ def caller(episode_length, candidate_count, num_experiment, num_episodes, experi
     import numpy as np
     from torch.utils.tensorboard import SummaryWriter
 
-    all_user_features = pkl.load(open('all_user_features_new.pkl', 'rb'))
+    all_user_features = pkl.load(open('all_user_features.pkl', 'rb'))
     user_features = all_user_features[:user_count]
 
     user_model = pkl.load(open('learned_user_intent_model.pkl', 'rb'))
@@ -178,12 +153,6 @@ def caller(episode_length, candidate_count, num_experiment, num_episodes, experi
     futures = []
     for i in range(num_experiment):
         experiment_wrapper(user_features, user_model, feed_count, i, num_episodes, experiment_name, env_type, writer)
-    #     futures.append(experiment_wrapper.remote(user_features, user_model, feed_count, i, num_episodes))
-    # ray.get(futures)
-
-#     with Pool(num_experiment) as p:
-#         print(p.map(experiment_wrapper, [(feed_units, i, num_episodes, randomize) for i in range(num_experiment)]))
-    # writer.close()
 
 if __name__ == '__main__':
     import os

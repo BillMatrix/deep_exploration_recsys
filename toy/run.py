@@ -85,16 +85,11 @@ def experiment_wrapper(feed_units, i, num_episodes, randomize, env_type):
                 [k for k in range(len(feed_units))],
                 'deep_exploration_{}_{}_{}'.format(num_positive, len(feed_units), prior),
                 prior_variance=10**prior,
-#                     bootstrap=False
             )
         )
     agents = ([
-        # OracleAgent(feed_units, session_size),
         SupervisedAgent([k for k in range(len(feed_units))], 'supervised_{}_{}'.format(num_positive, len(feed_units))),
-        SupervisedAgentOneStep([k for k in range(len(feed_units))], 'supervised_one_step_{}_{}'.format(num_positive, len(feed_units))),
         DQNAgent([k for k in range(len(feed_units))], 'dqn_{}_{}'.format(num_positive, len(feed_units))),
-        # DeepExpHyperAgent([k for k in range(len(feed_units))], 'hyper_deep_exploration_{}_{}'.format(num_positive, len(feed_units))),
-        # DeepExpIDSAgent([k for k in range(len(feed_units))], 'ids_{}_{}'.format(num_positive, len(feed_units))),
     ]
     + deep_exp_agents
     )
@@ -123,7 +118,6 @@ def caller(n, k, num_experiment, num_episodes, randomize=False, env_type='sparse
 
     if randomize:
         random.shuffle(feed_units)
-#     writer = SummaryWriter('./experiment/')
 
     agents_cumulative_reward = []
     agents = []
@@ -131,11 +125,6 @@ def caller(n, k, num_experiment, num_episodes, randomize=False, env_type='sparse
     futures = []
     for i in range(num_experiment):
         experiment_wrapper(feed_units, i, num_episodes, randomize, env_type)
-    #     futures.append(experiment_wrapper.remote(feed_units, i, num_episodes, randomize))
-    # ray.get(futures)
-
-#     with Pool(num_experiment) as p:
-#         print(p.map(experiment_wrapper, [(feed_units, i, num_episodes, randomize) for i in range(num_experiment)]))
 
 
 if __name__ == '__main__':
@@ -149,22 +138,3 @@ if __name__ == '__main__':
             caller(n, k, num_experiments, num_episodes, env_type='sparse_reward')
 
     writer.close()
-#     import torch.multiprocessing as mp
-#     processes = []
-
-#     for n in range(7, 8):
-#         for k in range(3, 5):
-#             for r in range(2):
-#                 num_episodes = 10000 * (k + 1)
-#                 caller(n, k, num_experiments, num_episodes, bool(r))
-#                 p = mp.Process(target=caller, args=(n, k, num_experiments, num_episodes, bool(r)))
-#                 p.start()
-#                 processes.append(p)
-
-#     print(len(processes))
-#     for p in processes:
-#         p.join()
-
-#     from multiprocessing import Pool
-#     with Pool(30) as p:
-#         p.starmap(caller, inputs)
